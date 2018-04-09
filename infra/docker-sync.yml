@@ -1,0 +1,12 @@
+version: '2'
+
+options:
+    compose-file-path:
+        - docker-compose-alpine-mac.yml
+syncs:
+    project_app_sync:
+        src: '../'
+        sync_userid: ${USER_ID}
+        sync_groupid: ${GROUP_ID}
+        sync_strategy: 'native_osx'
+        sync_excludes: ['var/cache', 'var/log', '.gitignore', '.git', '.idea', '.DS_Store', 'public/bundles']
