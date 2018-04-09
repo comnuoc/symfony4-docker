@@ -1,0 +1,97 @@
+version: "3"
+services:
+    nginx:
+        image: nginx:alpine
+        ports:
+            - "80:80"
+        logging:
+            options:
+                max-size: "10m"
+                max-file: "3"
+        volumes:
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./nginx/fastcgi_params:/etc/nginx/fastcgi_params:ro
+            - ./nginx/project.conf:/etc/nginx/project.conf:ro
+            - project_app_sync:/var/www/project:ro,nocopy
+            - app_test1:/var/www/project1:ro
+            - app_test2:/var/www/project2:ro
+            - app_test3:/var/www/project3:ro
+        # Uncomment following line to enable debug logs on nginx
+        # command: [nginx-debug, '-g', 'daemon off;']
+        links:
+            - php
+        depends_on:
+            - php
+        networks:
+            default:
+                aliases:
+                    - project.local # Add alias for behat testing.
+                    - project1.local
+                    - project2.local
+                    - project3.local
+    php:
+        build:
+            context: ./php
+            dockerfile: Dockerfile-alpine
+        ports:
+            - 9000:9000     # FPM
+            # - 5435:5435     # Ssh tunnel
+        expose:
+            - 9001 # xdebug
+        environment:
+            XDEBUG_CONFIG: remote_host=172.17.0.1 # To adjust depending on your OS
+            DOCKER_LOCAL: 'true' # Used by app_dev.php controller
+            PHP_IDE_CONFIG: "serverName=project.local" # PHPStorm xdebug. See: https://confluence.jetbrains.com/display/PhpStorm/Debugging+PHP+CLI+scripts+with+PhpStorm
+            SSH_AUTH_SOCK: '/ssh-agent'
+        image: project_php:alpine
+        logging:
+            options:
+                max-size: "10m"
+                max-file: "3"
+        volumes:
+            - project_app_sync:/var/www/project:nocopy
+            - ./php/app.ini:/usr/local/etc/php/conf.d/app.ini:delegated
+            - ./php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+            - ./php/fpm.conf:/usr/local/etc/php/7.1/php-fpm.d/fpm.conf:delegated
+            - composer_cache:/home/www-data/.composer:delegated
+            - ./php/composer-auth.json:/home/www-data/.composer/auth.json
+            - ${SSH_AUTH_SOCK}:/ssh-agent # Forward ssh
+            - app_test1:/var/www/project1:delegated
+            - app_test2:/var/www/project2:delegated
+            - app_test3:/var/www/project3:delegated
+        links:
+            - database
+            - smtp
+        working_dir: /var/www/project
+
+    database:
+        image: postgres:10.3-alpine
+        ports:
+            - "5432:5432"
+        logging:
+            options:
+                max-size: "10m"
+                max-file: "3"
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        volumes:
+            - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+            - ./postgres/clone.sh:/clone.sh:ro
+            - postgres_data:/var/lib/postgresql/data
+
+    smtp:
+        image: schickling/mailcatcher
+        ports:
+            - "1080:1080"
+
+volumes:
+    composer_cache:
+    app_test1:
+    app_test2:
+    app_test3:
+    postgres_data:
+    project_app_sync:
+        external: true
+networks:
+    default:

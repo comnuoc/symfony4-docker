@@ -1,0 +1,9 @@
+.git
+.idea
+var/cache/*
+var/log/*
+bin
+vendor
+infra
+public/*
+.DS_Store
