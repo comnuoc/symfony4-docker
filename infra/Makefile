@@ -182,10 +182,10 @@ xdebug-disable: ## To disable xdebug
     @docker-compose restart php
 
 cs-fixer: ## Fix CS
-    @docker-compose exec php php bin/php-cs-fixer fix ./src --rules='{"@Symfony": true,"@Symfony:risky":true,"array_syntax":{"syntax":"short"},"protected_to_private":false}' --allow-risky=yes --verbose --show-progress=estimating --using-cache=no
+    @docker-compose exec php php vendor/bin/php-cs-fixer fix ./src --rules='{"@Symfony": true,"@Symfony:risky":true,"array_syntax":{"syntax":"short"},"protected_to_private":false}' --allow-risky=yes --verbose --show-progress=estimating --using-cache=no
 
 cs-fixer-dry-run: ## Fix CS (Dry run)
-    @docker-compose exec php php bin/php-cs-fixer fix ./src --rules='{"@Symfony": true,"@Symfony:risky":true,"array_syntax":{"syntax":"short"},"protected_to_private":false}' --allow-risky=yes --verbose --show-progress=estimating --using-cache=no --dry-run
+    @docker-compose exec php php vendor/bin/php-cs-fixer fix ./src --rules='{"@Symfony": true,"@Symfony:risky":true,"array_syntax":{"syntax":"short"},"protected_to_private":false}' --allow-risky=yes --verbose --show-progress=estimating --using-cache=no --dry-run
 
 ########################################
 #                TESTS                 #
@@ -207,7 +207,7 @@ tags="project"
 # make test-behat feature="--skip-isolators=database,cache,import_export src/Project/Bundle/ProductBundle/Tests/Behat/Features/product.feature"
 test-behat: ## Test behat
     @docker-compose -f selenium/docker-compose.yml up -d selenium-hub ${profile}
-    @docker-compose exec php php -dmemory_limit=-1 bin/behat --tags=${tags} --profile=${profile} --config=infra/app/tests/behat.yml ${feature}
+    @docker-compose exec php php -dmemory_limit=-1 vendor/bin/behat --tags=${tags} --profile=${profile} --config=infra/app/tests/behat.yml ${feature}
 
 i = 1
 # make test-behat-isolation
@@ -224,7 +224,7 @@ test-behat-isolation: ## Test behat with isolation
     @echo "${WARN_COLOR}Cloning source....${NO_COLOR}"
     @docker-compose exec --user=root php /bin/bash /var/www/project/infra/php/clone.sh 'clone' /var/www/project ${i}
     @echo "${WARN_COLOR}Running tests...${NO_COLOR}"
-    @-docker-compose exec php /bin/bash -c "cd /var/www/project${i} && php -dmemory_limit=-1 bin/behat --tags='${tags}' --profile=${profile} --config=infra/app/tests/behat.yml ${feature}"
+    @-docker-compose exec php /bin/bash -c "cd /var/www/project${i} && php -dmemory_limit=-1 vendor/bin/behat --tags='${tags}' --profile=${profile} --config=infra/app/tests/behat.yml ${feature}"
     @echo "${WARN_COLOR}Removing database...${NO_COLOR}"
     @docker-compose exec database /bin/bash /clone.sh 'drop' ${i}
     @echo "${WARN_COLOR}Removing source...${NO_COLOR}"
